@@ -1,6 +1,9 @@
 package com.example.jeudushifumi
 
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,35 +25,63 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
+import com.example.jeudushifumi.Events.ShakeEvent
+import com.example.jeudushifumi.ViewModel.ShakeViewModel
 
 
 import com.example.jeudushifumi.ui.theme.JEUDUSHIFUMITheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var shakeEvent: ShakeEvent
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
         setContent {
             JEUDUSHIFUMITheme {
                 AppNavigation()
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (::shakeEvent.isInitialized) {
+            sensorManager.registerListener(shakeEvent, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(shakeEvent)
+    }
+
 }
 
 @Composable
@@ -84,8 +115,6 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .height(56.dp)
                             .width(150.dp)
-
-
                             .clip(RoundedCornerShape(16.dp))
                             .background(
                                 Brush.horizontalGradient(
@@ -104,9 +133,10 @@ fun HomeScreen(navController: NavController) {
     }
 }
 
-
 @Composable
-fun PlayScreen(){
+fun PlayScreen(viewModel: ShakeViewModel) {
+    ShakeListener(viewModel)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -115,30 +145,42 @@ fun PlayScreen(){
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Page de jeux",
+            text = viewModel.shakeText.value,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .padding(12.dp),
+            modifier = Modifier.padding(12.dp)
         )
-
-
-
-
     }
 }
 
 @Composable
-fun AppNavigation(){
+fun AppNavigation() {
+    val viewModel: ShakeViewModel = viewModel()
+
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "home" ){
-        composable("home"){
-            HomeScreen(navController= navController)
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            HomeScreen(navController = navController)
         }
-        composable(
-            route = "playScreen",
-        ) {
-            PlayScreen()
+        composable("playScreen") {
+            PlayScreen(viewModel)
+        }
+    }
+}
+
+@Composable
+fun ShakeListener(viewModel: ShakeViewModel) {
+    val sensorManager = LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+    val shakeEvent = ShakeEvent {
+        viewModel.onShakeDetected()
+    }
+
+    DisposableEffect(Unit) {
+        sensorManager.registerListener(shakeEvent, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        onDispose {
+            sensorManager.unregisterListener(shakeEvent)
         }
     }
 }
