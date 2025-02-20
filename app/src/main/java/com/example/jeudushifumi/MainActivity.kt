@@ -22,12 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,16 +33,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.jeudushifumi.Events.ShakeEvent
-import com.example.jeudushifumi.ViewModel.ShakeViewModel
+import com.example.jeudushifumi.ViewModel.GameViewModel
 
 
 import com.example.jeudushifumi.ui.theme.JEUDUSHIFUMITheme
@@ -91,8 +90,8 @@ fun HomeScreen(navController: NavController) {
             .fillMaxSize()
     ) {
         Image(
-            painter = painterResource(id = R.drawable.tett),
-            contentDescription = null,
+            painter = painterResource(id = R.drawable.main_background),
+            contentDescription = "Background dragon ball",
             contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize()
         )
@@ -105,8 +104,11 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Bienvenue dans le jeu ShiFouMi",
+                text = "Es-tu pret à faire un ShiFouMi dans l'univers de Dragon Ball?",
                 style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                fontSize = 30.sp,
                 color = Color.White,
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -134,7 +136,7 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun PlayScreen(viewModel: ShakeViewModel) {
+fun PlayScreen(viewModel: GameViewModel) {
     ShakeListener(viewModel)
 
     Column(
@@ -154,7 +156,7 @@ fun PlayScreen(viewModel: ShakeViewModel) {
 
 @Composable
 fun AppNavigation() {
-    val viewModel: ShakeViewModel = viewModel()
+    val viewModel: GameViewModel = viewModel()
 
     val navController = rememberNavController()
 
@@ -169,7 +171,7 @@ fun AppNavigation() {
 }
 
 @Composable
-fun ShakeListener(viewModel: ShakeViewModel) {
+fun ShakeListener(viewModel: GameViewModel) {
     val sensorManager = LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
