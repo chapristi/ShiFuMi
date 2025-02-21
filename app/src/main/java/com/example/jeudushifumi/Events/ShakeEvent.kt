@@ -17,20 +17,25 @@ class ShakeEvent(private val onShake: () -> Unit) : SensorEventListener {
             val x = it.values[0]
             val y = it.values[1]
             val z = it.values[2]
+
             val acceleration = sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH
 
             val currentTime = System.currentTimeMillis()
 
             if (acceleration > SHAKE_THRESHOLD) {
+                if (currentTime - lastShakeTime < DEBOUNCE_TIME) {
+                    return
+                }
+
                 if (currentTime - lastShakeTime > SHAKE_TIME_LAPSE) {
-                    shakeCount = 0 // Réinitialisation si trop de temps entre les secousses
+                    shakeCount = 0
                 }
 
                 lastShakeTime = currentTime
                 shakeCount++
 
                 if (shakeCount >= REQUIRED_SHAKES) {
-                    shakeCount = 0
+                    resetShakeTime()
                     onShake()
                 }
             }
@@ -38,17 +43,18 @@ class ShakeEvent(private val onShake: () -> Unit) : SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Pas d'implémentation nécessaire ici pas tres LSP ):
     }
 
-    fun resetShakeTime() {
-        lastShakeTime = 0
+    private fun resetShakeTime() {
+        lastShakeTime = System.currentTimeMillis() + COOLDOWN_TIME
         shakeCount = 0
     }
 
     companion object {
-        private const val SHAKE_THRESHOLD = 3.0f
-        private const val SHAKE_TIME_LAPSE = 1300
+        private const val SHAKE_THRESHOLD = 12.0f
+        private const val SHAKE_TIME_LAPSE = 500
         private const val REQUIRED_SHAKES = 3
+        private const val DEBOUNCE_TIME = 300
+        private const val COOLDOWN_TIME = 1000
     }
 }

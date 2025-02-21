@@ -13,10 +13,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -25,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +49,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.jeudushifumi.Events.ShakeEvent
 import com.example.jeudushifumi.ViewModel.GameViewModel
+import com.example.jeudushifumi.model.GameResult
+import com.example.jeudushifumi.utils.getChoiceImage
 
 
 import com.example.jeudushifumi.ui.theme.JEUDUSHIFUMITheme
@@ -115,8 +121,8 @@ fun HomeScreen(navController: NavController) {
             Button(
                 onClick = { navController.navigate("playScreen") } ,
                         modifier = Modifier
-                            .height(56.dp)
-                            .width(150.dp)
+                            .height(70.dp)
+                            .width(200.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(
                                 Brush.horizontalGradient(
@@ -129,30 +135,130 @@ fun HomeScreen(navController: NavController) {
                     pressedElevation = 4.dp
                 )
             ) {
-                Text(text = "Jouer")
+                Text(text = "Jouer contre la machine")
             }
         }
     }
 }
-
 @Composable
-fun PlayScreen(viewModel: GameViewModel) {
+fun PlayScreen(viewModel: GameViewModel, navController: NavController) {
     ShakeListener(viewModel)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    val gameState = viewModel.gameState.collectAsState()
+
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = viewModel.shakeText.value,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(12.dp)
+        Image(
+            painter = painterResource(id = R.drawable.play_background),
+            contentDescription = "Background PlayScreen",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
         )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(onClick = { navController.navigate("home") } ,
+
+                modifier = Modifier
+                    .height(50.dp)
+                    .width(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            ){
+                Text(
+                    text = "retour menu",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Text(
+                text = when (gameState.value.result) {
+                    GameResult.WIN -> "Tu as gagné !"
+                    GameResult.LOSE -> "Tu as perdu !"
+                    GameResult.DRAW -> "Égalité !"
+                    else -> "Secoue pour jouer"
+                },
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+
+            Text(
+                text = "Score Joueur : ${gameState.value.playerScore} | Score Ordinateur : ${gameState.value.computerScore}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Yellow,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Joueur",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    if (gameState.value.playerChoice == null) {
+                        Image(
+                            painter = painterResource(id = R.drawable.freezer),
+                            contentDescription = "Trunks",
+                            modifier = Modifier.size(200.dp)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = getChoiceImage(gameState.value.playerChoice!!)),
+                            contentDescription = "Choix de l'ordinateur",
+                            modifier = Modifier.size(200.dp)
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Machine",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    if (gameState.value.computerChoice == null) {
+                        Image(
+                            painter = painterResource(id = R.drawable.trunks),
+                            contentDescription = "Trunks",
+                            modifier = Modifier.size(200.dp)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = getChoiceImage(gameState.value.computerChoice!!)),
+                            contentDescription = "Choix de l'ordinateur",
+                            modifier = Modifier.size(200.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
+
+
+
 
 @Composable
 fun AppNavigation() {
@@ -165,7 +271,7 @@ fun AppNavigation() {
             HomeScreen(navController = navController)
         }
         composable("playScreen") {
-            PlayScreen(viewModel)
+            PlayScreen(viewModel, navController)
         }
     }
 }
